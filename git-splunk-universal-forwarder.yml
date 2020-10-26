@@ -1,0 +1,62 @@
+---
+- hosts: localhost
+  become: yes
+  gather_facts: no
+  
+  tasks:
+
+    - name: Remove all existing repos file under /etc/yum.repos.d
+      raw: /usr/bin/rm -rf /etc/yum.repos.d/*.repo
+      args:
+        executable: /bin/bash
+
+    - name: Push out yum template and backup the original
+      template:
+        src: /home/user/dev/templates/yum.conf.j2
+        dest: /etc/yum.conf
+        backup: no
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Add Miscellaneous Repository
+      yum_repository:
+             name: misc
+             description: misc
+             file: misc.repo
+             baseurl: http://<ipaddress>/misc
+             gpgcheck: no
+             enabled: yes
+      
+    - name: install splunkforwarder
+      yum:
+           name: 'splunkforwarder.x86_64'
+           state: latest
+
+    - name: Deploy passwd to /opt/splunkforwarder/etc/passwd
+      template:
+        src: /home/user/dev/templates/passwd.j2
+        dest: /opt/splunkforwarder/etc/passwd
+        backup: no
+        owner: root
+        group: root
+        mode: '0600'
+    
+    - name: Accept splunk license
+      shell: /opt/splunkforwarder/bin/splunk start --accept-license --no-prompt --auto-ports
+
+    - name: Enable splunk universal forward to run at boottime 
+      shell: /opt/splunkforwarder/bin/splunk enable boot-start
+
+    - name: restart splunk
+      shell: /opt/splunkforwarder/bin/splunk restart
+      
+    - name: Add the forward server  
+      shell: /opt/splunkforwarder/bin/splunk add forward-server <ipaddress>:9997 -auth admin:'<password>
+      
+    - name: Enable splunk universal forwarder to monitor audit.log
+      shell: /opt/splunkforwarder/bin/splunk add monitor /var/log/audit/audit.log       
+
+
+
+  
