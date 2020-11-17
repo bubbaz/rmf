@@ -1,0 +1,16 @@
+---
+- name: deploy classification script to usr local bin 
+  copy:
+    src: /home/user/dev/files/classification-banner.py
+    dest: /usr/local/bin/classification-banner.py
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: deploy classification banner desktop file to autostart
+  copy:
+    src: /home/user/dev/files/classification-banner.desktop
+    dest: /etc/xdg/autostart/classification-banner.desktop
+    owner: root
+    group: root
+    mode: '0644'
